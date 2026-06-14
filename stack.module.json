@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "huly",
+  "repo": "huly-stack-module",
+  "runtimeId": "huly",
+  "lifecycle": "active",
+  "dependencies": [
+    "stack-foundation"
+  ],
+  "overlays": [
+    "stack.compose/huly.yml"
+  ]
+}
