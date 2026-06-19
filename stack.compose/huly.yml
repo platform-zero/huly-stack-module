@@ -1,6 +1,6 @@
 services:
   huly-cockroach:
-    image: cockroachdb/cockroach:latest-v24.2
+    image: cockroachdb/cockroach@sha256:885d9b0e3243f262976763717e547dbbe75ca999548f7a4ea95fcd30a9aee66c
     container_name: huly-cockroach
     command: start-single-node --insecure
     restart: unless-stopped
@@ -51,7 +51,7 @@ services:
       start_period: 60s
 
   huly-minio:
-    image: minio/minio:latest
+    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
     container_name: huly-minio
     command: server /data --address ":9000" --console-address ":9001"
     restart: unless-stopped
