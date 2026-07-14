@@ -1,0 +1,319 @@
+---
+schemaVersion: 1
+module: "huly"
+target: "apps"
+services:
+  huly-cockroach:
+    image: "cockroachdb/cockroach@sha256:885d9b0e3243f262976763717e547dbbe75ca999548f7a4ea95fcd30a9aee66c"
+    containerName: "huly-cockroach"
+    lifecycle: "daemon"
+    updatePolicy: "pinned"
+    placement: "rootful"
+    networks:
+      caddy: null
+    volumes:
+    - "huly_cockroach:/cockroach/cockroach-data"
+    health:
+      test:
+      - "CMD-SHELL"
+      - "cockroach sql --insecure --host=localhost:26257 --execute='select 1' >/dev/null"
+      interval: "30s"
+      timeout: "10s"
+      retries: 10
+      start_period: "60s"
+    command: "start-single-node --insecure"
+    restart: "unless-stopped"
+  huly-redpanda:
+    image: "docker.redpanda.com/redpandadata/redpanda:v24.3.6"
+    containerName: "huly-redpanda"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    networks:
+      caddy: null
+    volumes:
+    - "huly_redpanda:/var/lib/redpanda/data"
+    health:
+      test:
+      - "CMD-SHELL"
+      - "rpk cluster info >/dev/null"
+      interval: "30s"
+      timeout: "10s"
+      retries: 10
+      start_period: "60s"
+    command:
+    - "redpanda"
+    - "start"
+    - "--kafka-addr"
+    - "internal://0.0.0.0:9092"
+    - "--advertise-kafka-addr"
+    - "internal://huly-redpanda:9092"
+    - "--pandaproxy-addr"
+    - "internal://0.0.0.0:8082"
+    - "--schema-registry-addr"
+    - "internal://0.0.0.0:8081"
+    - "--rpc-addr"
+    - "huly-redpanda:33145"
+    - "--advertise-rpc-addr"
+    - "huly-redpanda:33145"
+    - "--mode"
+    - "dev-container"
+    - "--smp"
+    - "1"
+    - "--default-log-level=info"
+    restart: "unless-stopped"
+  huly-minio:
+    image: "minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e"
+    containerName: "huly-minio"
+    lifecycle: "daemon"
+    updatePolicy: "pinned"
+    placement: "rootful"
+    environment:
+      MINIO_ROOT_USER: "${HULY_MINIO_ACCESS_KEY:?HULY_MINIO_ACCESS_KEY is required}"
+      MINIO_ROOT_PASSWORD: "${HULY_MINIO_SECRET_KEY:?HULY_MINIO_SECRET_KEY is required}"
+    networks:
+      caddy: null
+    volumes:
+    - "huly_minio:/data"
+    health:
+      test:
+      - "CMD-SHELL"
+      - "mc ready local"
+      interval: "30s"
+      timeout: "10s"
+      retries: 10
+      start_period: "30s"
+    command: "server /data --address \":9000\" --console-address \":9001\""
+    restart: "unless-stopped"
+  huly-elastic:
+    image: "elasticsearch:7.14.2"
+    containerName: "huly-elastic"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    environment:
+      discovery.type: "single-node"
+      ES_JAVA_OPTS: "-Xms1024m -Xmx1024m"
+      http.cors.enabled: "true"
+      http.cors.allow-origin: "https://huly.${DOMAIN}"
+    networks:
+      caddy: null
+    volumes:
+    - "huly_elastic:/usr/share/elasticsearch/data"
+    health:
+      test:
+      - "CMD-SHELL"
+      - "curl -fsS http://localhost:9200/_cluster/health | grep -vq '\"status\":\"\
+        red\"'"
+      interval: "30s"
+      timeout: "10s"
+      retries: 10
+      start_period: "90s"
+    command: "/bin/sh -c \"./bin/elasticsearch-plugin list | grep -q ingest-attachment\
+      \ || yes | ./bin/elasticsearch-plugin install --silent ingest-attachment; /usr/local/bin/docker-entrypoint.sh\
+      \ eswrapper\"\n"
+    restart: "unless-stopped"
+  huly-rekoni:
+    image: "hardcoreeng/rekoni-service:${HULY_VERSION:-v0.7.423}"
+    containerName: "huly-rekoni"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    environment:
+      SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
+    networks:
+      caddy: null
+    restart: "unless-stopped"
+  huly-stats:
+    image: "hardcoreeng/stats:${HULY_VERSION:-v0.7.423}"
+    containerName: "huly-stats"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    environment:
+      PORT: 4900
+      SERVER_SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
+    networks:
+      caddy: null
+    restart: "unless-stopped"
+  huly-transactor:
+    image: "hardcoreeng/transactor:${HULY_VERSION:-v0.7.423}"
+    containerName: "huly-transactor"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    dependencies:
+      huly-cockroach: "healthy"
+      huly-redpanda: "healthy"
+      huly-minio: "healthy"
+      huly-elastic: "healthy"
+    environment:
+      SERVER_PORT: 3333
+      SERVER_SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
+      DB_URL: "postgresql://root@huly-cockroach:26257/defaultdb?sslmode=disable"
+      STORAGE_CONFIG: "minio|huly-minio?accessKey=${HULY_MINIO_ACCESS_KEY:?HULY_MINIO_ACCESS_KEY\
+        \ is required}&secretKey=${HULY_MINIO_SECRET_KEY:?HULY_MINIO_SECRET_KEY is\
+        \ required}"
+      FRONT_URL: "https://huly.${DOMAIN}"
+      ACCOUNTS_URL: "http://huly-account:3000"
+      FULLTEXT_URL: "http://huly-fulltext:4700"
+      STATS_URL: "http://huly-stats:4900"
+      LAST_NAME_FIRST: "${HULY_LAST_NAME_FIRST:-true}"
+      QUEUE_CONFIG: "huly-redpanda:9092"
+    networks:
+      caddy: null
+    restart: "unless-stopped"
+  huly-collaborator:
+    image: "hardcoreeng/collaborator:${HULY_VERSION:-v0.7.423}"
+    containerName: "huly-collaborator"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    environment:
+      COLLABORATOR_PORT: 3078
+      SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
+      ACCOUNTS_URL: "http://huly-account:3000"
+      STATS_URL: "http://huly-stats:4900"
+      STORAGE_CONFIG: "minio|huly-minio?accessKey=${HULY_MINIO_ACCESS_KEY:?HULY_MINIO_ACCESS_KEY\
+        \ is required}&secretKey=${HULY_MINIO_SECRET_KEY:?HULY_MINIO_SECRET_KEY is\
+        \ required}"
+    networks:
+      caddy: null
+    restart: "unless-stopped"
+  huly-account:
+    image: "hardcoreeng/account:${HULY_VERSION:-v0.7.423}"
+    containerName: "huly-account"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    dependencies:
+      huly-cockroach: "healthy"
+      huly-redpanda: "healthy"
+    environment:
+      SERVER_PORT: 3000
+      SERVER_SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
+      DB_URL: "postgresql://root@huly-cockroach:26257/defaultdb?sslmode=disable"
+      TRANSACTOR_URL: "ws://huly-transactor:3333;wss://huly.${DOMAIN}/_transactor"
+      STORAGE_CONFIG: "minio|huly-minio?accessKey=${HULY_MINIO_ACCESS_KEY:?HULY_MINIO_ACCESS_KEY\
+        \ is required}&secretKey=${HULY_MINIO_SECRET_KEY:?HULY_MINIO_SECRET_KEY is\
+        \ required}"
+      FRONT_URL: "https://huly.${DOMAIN}"
+      STATS_URL: "https://huly.${DOMAIN}/_stats"
+      MODEL_ENABLED: "*"
+      ACCOUNTS_URL: "https://huly.${DOMAIN}/_accounts"
+      ACCOUNT_PORT: 3000
+      QUEUE_CONFIG: "huly-redpanda:9092"
+    networks:
+      caddy: null
+    restart: "unless-stopped"
+  huly-workspace:
+    image: "hardcoreeng/workspace:${HULY_VERSION:-v0.7.423}"
+    containerName: "huly-workspace"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    dependencies:
+      huly-cockroach: "healthy"
+      huly-redpanda: "healthy"
+    environment:
+      SERVER_SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
+      DB_URL: "postgresql://root@huly-cockroach:26257/defaultdb?sslmode=disable"
+      TRANSACTOR_URL: "ws://huly-transactor:3333;wss://huly.${DOMAIN}/_transactor"
+      STORAGE_CONFIG: "minio|huly-minio?accessKey=${HULY_MINIO_ACCESS_KEY:?HULY_MINIO_ACCESS_KEY\
+        \ is required}&secretKey=${HULY_MINIO_SECRET_KEY:?HULY_MINIO_SECRET_KEY is\
+        \ required}"
+      MODEL_ENABLED: "*"
+      ACCOUNTS_URL: "http://huly-account:3000"
+      STATS_URL: "http://huly-stats:4900"
+      QUEUE_CONFIG: "huly-redpanda:9092"
+      ACCOUNTS_DB_URL: "postgresql://root@huly-cockroach:26257/defaultdb?sslmode=disable"
+    networks:
+      caddy: null
+    restart: "unless-stopped"
+  huly-front:
+    image: "hardcoreeng/front:${HULY_VERSION:-v0.7.423}"
+    containerName: "huly-front"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    dependencies:
+      huly-account: "started"
+      huly-transactor: "started"
+      huly-fulltext: "started"
+    environment:
+      SERVER_PORT: 8080
+      SERVER_SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
+      LOVE_ENDPOINT: "https://huly.${DOMAIN}/_love"
+      ACCOUNTS_URL: "https://huly.${DOMAIN}/_accounts"
+      ACCOUNTS_URL_INTERNAL: "http://huly-account:3000"
+      REKONI_URL: "https://huly.${DOMAIN}/_rekoni"
+      CALENDAR_URL: "https://huly.${DOMAIN}/_calendar"
+      GMAIL_URL: "https://huly.${DOMAIN}/_gmail"
+      TELEGRAM_URL: "https://huly.${DOMAIN}/_telegram"
+      STATS_URL: "https://huly.${DOMAIN}/_stats"
+      UPLOAD_URL: "/files"
+      ELASTIC_URL: "http://huly-elastic:9200"
+      COLLABORATOR_URL: "wss://huly.${DOMAIN}/_collaborator"
+      STORAGE_CONFIG: "minio|huly-minio?accessKey=${HULY_MINIO_ACCESS_KEY:?HULY_MINIO_ACCESS_KEY\
+        \ is required}&secretKey=${HULY_MINIO_SECRET_KEY:?HULY_MINIO_SECRET_KEY is\
+        \ required}"
+      TITLE: "${HULY_TITLE:-Platform Zero Work}"
+      DEFAULT_LANGUAGE: "${HULY_DEFAULT_LANGUAGE:-en}"
+      LAST_NAME_FIRST: "${HULY_LAST_NAME_FIRST:-true}"
+      DESKTOP_UPDATES_CHANNEL: "${HULY_DESKTOP_CHANNEL:-selfhost}"
+      DISABLED_FEATURES: "${HULY_DISABLED_FEATURES:-auto-translate,mailboxes}"
+    networks:
+      caddy: null
+    health:
+      test:
+      - "CMD-SHELL"
+      - "wget --quiet --tries=1 --spider http://localhost:8080/ || exit 1"
+      interval: "60s"
+      timeout: "10s"
+      retries: 5
+      start_period: "90s"
+    restart: "unless-stopped"
+  huly-fulltext:
+    image: "hardcoreeng/fulltext:${HULY_VERSION:-v0.7.423}"
+    containerName: "huly-fulltext"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    dependencies:
+      huly-cockroach: "healthy"
+      huly-elastic: "healthy"
+    environment:
+      SERVER_SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
+      DB_URL: "postgresql://root@huly-cockroach:26257/defaultdb?sslmode=disable"
+      FULLTEXT_DB_URL: "http://huly-elastic:9200"
+      ELASTIC_INDEX_NAME: "huly_storage_index"
+      STORAGE_CONFIG: "minio|huly-minio?accessKey=${HULY_MINIO_ACCESS_KEY:?HULY_MINIO_ACCESS_KEY\
+        \ is required}&secretKey=${HULY_MINIO_SECRET_KEY:?HULY_MINIO_SECRET_KEY is\
+        \ required}"
+      REKONI_URL: "http://huly-rekoni:4004"
+      ACCOUNTS_URL: "http://huly-account:3000"
+      STATS_URL: "http://huly-stats:4900"
+      QUEUE_CONFIG: "huly-redpanda:9092"
+    networks:
+      caddy: null
+    restart: "unless-stopped"
+  huly-kvs:
+    image: "hardcoreeng/hulykvs:${HULY_VERSION:-v0.7.423}"
+    containerName: "huly-kvs"
+    lifecycle: "daemon"
+    updatePolicy: "registry"
+    placement: "rootful"
+    dependencies:
+      huly-cockroach: "healthy"
+    environment:
+      HULY_DB_CONNECTION: "postgresql://root@huly-cockroach:26257/defaultdb?sslmode=disable"
+      HULY_TOKEN_SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
+    networks:
+      caddy: null
+    restart: "unless-stopped"
+networks: {}
+volumes:
+  huly_cockroach: {}
+  huly_redpanda: {}
+  huly_minio: {}
+  huly_elastic: {}
