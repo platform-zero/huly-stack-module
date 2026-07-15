@@ -24,7 +24,7 @@ services:
     command: "start-single-node --insecure"
     restart: "unless-stopped"
   huly-redpanda:
-    image: "docker.redpanda.com/redpandadata/redpanda:v24.3.6"
+    image: "docker.io/redpandadata/redpanda:v24.3.6"
     containerName: "huly-redpanda"
     lifecycle: "daemon"
     updatePolicy: "registry"
@@ -114,7 +114,7 @@ services:
       \ eswrapper\"\n"
     restart: "unless-stopped"
   huly-rekoni:
-    image: "hardcoreeng/rekoni-service:${HULY_VERSION:-v0.7.423}"
+    image: "hardcoreeng/rekoni-service:v0.7.423"
     containerName: "huly-rekoni"
     lifecycle: "daemon"
     updatePolicy: "registry"
@@ -125,7 +125,7 @@ services:
       caddy: null
     restart: "unless-stopped"
   huly-stats:
-    image: "hardcoreeng/stats:${HULY_VERSION:-v0.7.423}"
+    image: "hardcoreeng/stats:v0.7.423"
     containerName: "huly-stats"
     lifecycle: "daemon"
     updatePolicy: "registry"
@@ -137,7 +137,7 @@ services:
       caddy: null
     restart: "unless-stopped"
   huly-transactor:
-    image: "hardcoreeng/transactor:${HULY_VERSION:-v0.7.423}"
+    image: "hardcoreeng/transactor:v0.7.423"
     containerName: "huly-transactor"
     lifecycle: "daemon"
     updatePolicy: "registry"
@@ -164,7 +164,7 @@ services:
       caddy: null
     restart: "unless-stopped"
   huly-collaborator:
-    image: "hardcoreeng/collaborator:${HULY_VERSION:-v0.7.423}"
+    image: "hardcoreeng/collaborator:v0.7.423"
     containerName: "huly-collaborator"
     lifecycle: "daemon"
     updatePolicy: "registry"
@@ -181,7 +181,7 @@ services:
       caddy: null
     restart: "unless-stopped"
   huly-account:
-    image: "hardcoreeng/account:${HULY_VERSION:-v0.7.423}"
+    image: "hardcoreeng/account:v0.7.423"
     containerName: "huly-account"
     lifecycle: "daemon"
     updatePolicy: "registry"
@@ -207,7 +207,7 @@ services:
       caddy: null
     restart: "unless-stopped"
   huly-workspace:
-    image: "hardcoreeng/workspace:${HULY_VERSION:-v0.7.423}"
+    image: "hardcoreeng/workspace:v0.7.423"
     containerName: "huly-workspace"
     lifecycle: "daemon"
     updatePolicy: "registry"
@@ -231,7 +231,7 @@ services:
       caddy: null
     restart: "unless-stopped"
   huly-front:
-    image: "hardcoreeng/front:${HULY_VERSION:-v0.7.423}"
+    image: "hardcoreeng/front:v0.7.423"
     containerName: "huly-front"
     lifecycle: "daemon"
     updatePolicy: "registry"
@@ -274,7 +274,7 @@ services:
       start_period: "90s"
     restart: "unless-stopped"
   huly-fulltext:
-    image: "hardcoreeng/fulltext:${HULY_VERSION:-v0.7.423}"
+    image: "hardcoreeng/fulltext:v0.7.423"
     containerName: "huly-fulltext"
     lifecycle: "daemon"
     updatePolicy: "registry"
@@ -298,7 +298,7 @@ services:
       caddy: null
     restart: "unless-stopped"
   huly-kvs:
-    image: "hardcoreeng/hulykvs:${HULY_VERSION:-v0.7.423}"
+    image: "hardcoreeng/hulykvs:v0.7.423"
     containerName: "huly-kvs"
     lifecycle: "daemon"
     updatePolicy: "registry"
