@@ -214,6 +214,9 @@ services:
       MODEL_ENABLED: "*"
       ACCOUNTS_URL: "https://huly.${DOMAIN}/_accounts"
       ACCOUNT_PORT: 3000
+      OPENID_CLIENT_ID: "huly"
+      OPENID_CLIENT_SECRET: "${HULY_OPENID_CLIENT_SECRET:?HULY_OPENID_CLIENT_SECRET is required}"
+      OPENID_ISSUER: "https://keycloak.${DOMAIN}/realms/webservices"
       QUEUE_CONFIG: "huly-redpanda:9092"
     networks:
       caddy: null
