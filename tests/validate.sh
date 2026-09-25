@@ -12,7 +12,7 @@ if [ -z "$validator" ]; then
 fi
 [ -n "$validator" ] || { printf '[module-contract] set WEBSERVICES_MODULE_CONTRACT_VALIDATOR or keep sso-stack-generator next to modules workspace\n' >&2; exit 1; }
 "$validator" validate "$repo_root"
-grep -Fq 'OPENID_ISSUER: "http://host.containers.internal:25007/realms/webservices"' "$repo_root/stack.runtime.yaml"
+grep -Fq "OPENID_ISSUER: \"https://keycloak.\${DOMAIN}/realms/webservices\"" "$repo_root/stack.runtime.yaml"
 grep -Fq 'BRANDING_PATH: "/usr/src/app/brandings.json"' "$repo_root/stack.runtime.yaml"
 grep -Fq '"./configs/huly/brandings.json:/usr/src/app/brandings.json:ro"' "$repo_root/stack.runtime.yaml"
 grep -Fq '"huly.{{DOMAIN}}"' "$repo_root/stack.config/huly/brandings.json.template"
