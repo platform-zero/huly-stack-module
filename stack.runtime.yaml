@@ -217,7 +217,10 @@ services:
       OPENID_CLIENT_ID: "huly"
       OPENID_CLIENT_SECRET: "${HULY_OPENID_CLIENT_SECRET:?HULY_OPENID_CLIENT_SECRET is required}"
       OPENID_ISSUER: "http://host.containers.internal:25007/realms/webservices"
+      BRANDING_PATH: "/usr/src/app/brandings.json"
       QUEUE_CONFIG: "huly-redpanda:9092"
+    volumes:
+    - "./configs/huly/brandings.json:/usr/src/app/brandings.json:ro"
     networks:
       caddy: null
     restart: "unless-stopped"
