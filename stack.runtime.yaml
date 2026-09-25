@@ -216,7 +216,7 @@ services:
       ACCOUNT_PORT: 3000
       OPENID_CLIENT_ID: "huly"
       OPENID_CLIENT_SECRET: "${HULY_OPENID_CLIENT_SECRET:?HULY_OPENID_CLIENT_SECRET is required}"
-      OPENID_ISSUER: "https://keycloak.${DOMAIN}/realms/webservices"
+      OPENID_ISSUER: "http://host.containers.internal:25007/realms/webservices"
       QUEUE_CONFIG: "huly-redpanda:9092"
     networks:
       caddy: null
