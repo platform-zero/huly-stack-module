@@ -16,7 +16,8 @@
   "smoke": "external-only",
   "smokeUnsupportedReason": "requires generated bundle context, deployed networking, secrets, or service dependencies",
   "overlays": [
-    "stack.runtime.yaml"
+    "stack.runtime.yaml",
+    "stack.config/huly/brandings.json.template"
   ],
   "testAssets": []
 }
