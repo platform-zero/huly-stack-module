@@ -215,6 +215,12 @@ services:
       ACCOUNTS_URL: "https://huly.${DOMAIN}/_accounts"
       ACCOUNT_PORT: 3000
       QUEUE_CONFIG: "huly-redpanda:9092"
+      BRANDING_PATH: "/usr/src/app/brandings.json"
+      OPENID_CLIENT_ID: "huly"
+      OPENID_CLIENT_SECRET: "${HULY_OPENID_CLIENT_SECRET:?HULY_OPENID_CLIENT_SECRET is required}"
+      OPENID_ISSUER: "https://keycloak.${DOMAIN}/realms/webservices"
+    volumes:
+      - "./configs/huly/brandings.json:/usr/src/app/brandings.json:ro"
     networks:
       caddy: null
     restart: "unless-stopped"
