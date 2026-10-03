@@ -9,14 +9,14 @@ attempt=0
 while [ "$attempt" -lt 60 ]; do
   if node -e '
     const issuer = process.env.OPENID_ISSUER;
-    const url = `${issuer.replace(/\/$/, "")}/.well-known/openid-configuration`;
+    const url = issuer.replace(/\/$/, "") + "/.well-known/openid-configuration";
     fetch(url, { signal: AbortSignal.timeout(5000) })
       .then(async response => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) throw new Error("HTTP " + response.status);
         const metadata = await response.json();
         if (metadata.issuer !== issuer) throw new Error("issuer mismatch");
       })
-      .catch(error => { console.error(`OIDC discovery unavailable: ${error.message}`); process.exitCode = 1; });
+      .catch(error => { console.error("OIDC discovery unavailable: " + error.message); process.exitCode = 1; });
   '; then
     exec node bundle.js
   fi
