@@ -221,6 +221,8 @@ services:
       OPENID_ISSUER: "https://keycloak.${DOMAIN}/realms/webservices"
     volumes:
       - "./configs/huly/brandings.json:/usr/src/app/brandings.json:ro"
+      - "./configs/huly/wait-for-oidc.sh:/wait-for-oidc.sh:ro"
+    command: ["sh", "/wait-for-oidc.sh"]
     networks:
       caddy: null
     restart: "unless-stopped"
