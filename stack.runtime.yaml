@@ -227,6 +227,8 @@ services:
     - "./configs/huly/wait-for-oidc.sh:/wait-for-oidc.sh:ro"
     # Public CA follows the live Caddy export, not a pre-start private volume copy.
     - "${STACK_VOLUME_ROOT}/caddy_ca:/ca:ro"
+    extraHosts:
+    - "keycloak.${DOMAIN}:host-gateway"
     command:
     - "sh"
     - "/wait-for-oidc.sh"
