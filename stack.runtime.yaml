@@ -203,6 +203,7 @@ services:
       huly-redpanda: "healthy"
     environment:
       SERVER_PORT: 3000
+      NODE_EXTRA_CA_CERTS: "/ca/caddy-ca.crt"
       SERVER_SECRET: "${HULY_SECRET:?HULY_SECRET is required}"
       DB_URL: "postgresql://root@huly-cockroach:26257/defaultdb?sslmode=disable"
       TRANSACTOR_URL: "ws://huly-transactor:3333;wss://huly.${DOMAIN}/_transactor"
@@ -222,6 +223,7 @@ services:
     volumes:
     - "./configs/huly/brandings.json:/usr/src/app/brandings.json:ro"
     - "./configs/huly/wait-for-oidc.sh:/wait-for-oidc.sh:ro"
+    - "caddy_ca:/ca:ro"
     command:
     - "sh"
     - "/wait-for-oidc.sh"
