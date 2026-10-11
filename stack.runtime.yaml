@@ -71,7 +71,9 @@ services:
         cpus: "1.0"
     restart: "unless-stopped"
   huly-minio:
-    image: "quay.io/minio/minio@sha256:3f97c5651cb6662b880c787a232b6b34fec8d8922e08d6617b25d241a21164bb"
+    # Exact configuration ID of the selected registry image; supplied through
+    # a hash-bound release input because its original registry manifest is unavailable.
+    image: "sha256:9d668e47f1fc60ea49af4203deee87a657eb1aa0e2761fee2c7c2d1df282c880"
     containerName: "huly-minio"
     lifecycle: "daemon"
     updatePolicy: "pinned"
