@@ -223,7 +223,8 @@ services:
     volumes:
     - "./configs/huly/brandings.json:/usr/src/app/brandings.json:ro"
     - "./configs/huly/wait-for-oidc.sh:/wait-for-oidc.sh:ro"
-    - "caddy_ca:/ca:ro"
+    # Public CA follows the live Caddy export, not a pre-start private volume copy.
+    - "${STACK_VOLUME_ROOT}/caddy_ca:/ca:ro"
     command:
     - "sh"
     - "/wait-for-oidc.sh"
