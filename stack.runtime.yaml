@@ -180,6 +180,10 @@ services:
   huly-collaborator:
     image: "hardcoreeng/collaborator:v0.7.423"
     containerName: "huly-collaborator"
+    # Preserve native image/entrypoint/command; redact its config.Secret log.
+    command: ["node", "/private-log-wrapper.cjs", "node", "bundle.js"]
+    volumes:
+    - "./configs/huly/private-log-wrapper.cjs:/private-log-wrapper.cjs:ro"
     lifecycle: "daemon"
     updatePolicy: "registry"
     placement: "rootful"
