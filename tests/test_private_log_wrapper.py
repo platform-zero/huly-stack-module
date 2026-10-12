@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Synthetic native-process checks, not authenticated Huly acceptance."""
 import os
+import json
 from pathlib import Path
 import signal
 import subprocess
@@ -9,6 +10,13 @@ import unittest
 WRAPPER = Path(__file__).resolve().parents[1] / 'stack.config/huly/private-log-wrapper.cjs'
 
 class Privacy(unittest.TestCase):
+    def test_wrapper_is_declared_materialized_overlay(self):
+        module=json.loads((WRAPPER.parents[2]/'stack.module.json').read_text())
+        self.assertIn('stack.config/huly/private-log-wrapper.cjs',module['overlays'])
+        runtime=(WRAPPER.parents[2]/'stack.runtime.yaml').read_text()
+        self.assertIn('command: ["node", "/private-log-wrapper.cjs", "node", "bundle.js"]',runtime)
+        self.assertIn('./configs/huly/private-log-wrapper.cjs:/private-log-wrapper.cjs:ro',runtime)
+
     def test_split_json_escaped_stdout_stderr_and_exit_code(self):
         secret = 'public-fixture-only-quote"slash\\unicode-π-12345678'
         code = '''const v=process.env.SECRET;

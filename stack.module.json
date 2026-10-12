@@ -18,7 +18,8 @@
   "overlays": [
     "stack.runtime.yaml",
     "stack.config/huly/brandings.json.template",
-    "stack.config/huly/wait-for-oidc.sh"
+    "stack.config/huly/wait-for-oidc.sh",
+    "stack.config/huly/private-log-wrapper.cjs"
   ],
   "testAssets": []
 }
